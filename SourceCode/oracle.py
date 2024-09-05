@@ -13,6 +13,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
 from wkutils.utils import *
 
+import os
 import sha3
 import base64
 import config
@@ -23,7 +24,7 @@ import ctypes
 from ctypes import c_char_p, c_size_t, c_bool, POINTER, c_void_p, cast
 
 # 加载共享库
-lib = ctypes.CDLL('./lib/liblsh_lib.so')  # 或 .dylib 在 macOS 上
+lib = ctypes.CDLL('./wklib/liblsh_lib.so')  # 或 .dylib 在 macOS 上
 
 # 定义函数签名
 lib.create_lsh.argtypes = [c_size_t, c_size_t, c_size_t, c_size_t, c_size_t]
@@ -206,12 +207,28 @@ class Oracle:
 
 @app.route('/data_collect', methods=['POST'])
 def data_collect():
+    # 结束时间
+    start_time = time.perf_counter()
+
+    # 计算执行时间
+    
     if not oracle.is_in_committee: #committee中的成员才接收消息
         return jsonify({"status":"你找错人了"}),200
     edata = request.json
+
+    json_str = json.dumps(edata)
+
+    # 计算JSON字符串的字节长度
+    byte_length = len(json_str.encode('utf-8'))
+
+    # 将字节数转换为KB
+    kb_size = byte_length / 1024
+
+    print(f"Oracle Data Collect Communication size(input): {kb_size:.2f} KB")
+
+
     ciphertext=edata["ciphertext"]
     message=decrypt_message(oracle.private_key,ciphertext)
-
 
     data_is_faithful=oracle.judge_data(message) #由oracle判断数据是否正确，目前这一功能为概率实现，即以概率返回True
 
@@ -236,8 +253,8 @@ def data_collect():
         h.update(m0b["data"].encode("utf-8"))
         h.update(str(m0b["timestamp"]).encode("utf-8")) #增加时间进行hash，进行batch控制，防止同一图片多次上传后无法ats
         store_key=h.hexdigest() #也就是图片的hash
-        base64_to_image(m0b["data"], f"./LocalStorage/oracle_storage/{store_key}.jpg")
-        oracle.lsh.insert(f"./LocalStorage/oracle_storage/{store_key}.jpg")
+        base64_to_image(m0b["data"], f"./LocalStorage/oracle_storage/{oracle.name}/{store_key}.jpg")
+        oracle.lsh.insert(f"./LocalStorage/oracle_storage/{oracle.name}/{store_key}.jpg")
         #图片，使用hash进行ats
         oracle.sign(store_key,key)
     else:
@@ -253,17 +270,36 @@ def data_collect():
     h.update(str(oracle.zi[key]).encode("utf-8"))
     h.update(ct.encode("utf-8"))
     signature_i=sign_hash(oracle.private_key,h.digest())
-    response = requests.post(
-        f"{oracle.proxy_url}/data_collect",
-        json={
+
+    json_data={
             "oraclename": oracle.name,
             "Ri": point_to_bytes(oracle.Ri[key]).hex(),
             "zi": str(oracle.zi[key]),
             "ciphertext": ct,
             "signature_i":signature_i,
             "public_key":base64.b64encode(oracle.get_rsa_pk_pem()).decode('utf-8')
-        }
+    }
+    end_time = time.perf_counter()
+    execution_time = end_time - start_time
+    print(f"Data Collect function executed in {execution_time:.4f} seconds")
+
+    response = requests.post(
+        f"{oracle.proxy_url}/data_collect",
+        json=json_data
     )
+    
+
+    json_str = json.dumps(json_data)
+
+    # 计算JSON字符串的字节长度
+    byte_length = len(json_str.encode('utf-8'))
+
+    # 将字节数转换为KB
+    kb_size = byte_length / 1024
+
+    print(f"Oracle Data Collect Communication size(output): {kb_size:.2f} KB")
+
+
 
     return jsonify({"status":"succeed"}),200
 
@@ -292,6 +328,15 @@ def data_trace():
     if not oracle.is_in_committee: #committee中的成员才接收消息
         return jsonify({"status":"你找错人了"}),200
     edata = request.json
+
+    json_str = json.dumps(edata)
+    # 计算JSON字符串的字节长度
+    byte_length = len(json_str.encode('utf-8'))
+    # 将字节数转换为KB
+    kb_size = byte_length / 1024
+    print(f"Oracle Data Trace Communication size(input): {kb_size:.2f} KB")
+
+    start_time=time.perf_counter()
     ciphertext=edata["ciphertext"]
     message=decrypt_message(oracle.private_key,ciphertext)
     m02=json.loads(message)
@@ -300,8 +345,8 @@ def data_trace():
     h.update(m02["data"].encode("utf-8"))
     h.update(str(m02["timestamp"]).encode("utf-8")) #增加时间进行hash，进行batch控制，防止多次请求Tracing后ats无法进行
     store_key=h.hexdigest()
-    base64_to_image(m02["data"], f"./LocalStorage/oracle_storage/{store_key}.jpg")
-    results = oracle.lsh.query(f"./LocalStorage/oracle_storage/{store_key}.jpg", 5)
+    base64_to_image(m02["data"], f"./LocalStorage/oracle_storage/{oracle.name}/{store_key}.jpg")
+    results = oracle.lsh.query(f"./LocalStorage/oracle_storage/{oracle.name}/{store_key}.jpg", 5)
     print(f"LSH查询结果:{results}")
 
     if not results == [""]: #查询到了结果
@@ -322,9 +367,12 @@ def data_trace():
         h.update(ct.encode("utf-8"))
         signature_i=sign_hash(oracle.private_key,h.digest())
 
-        response = requests.post(
-        f"{oracle.proxy_url}/data_trace",
-        json={
+        end_time=time.perf_counter()
+        execution_time = end_time - start_time
+        print(f"Oracle Data Trace function executed in {execution_time:.4f} seconds")
+
+
+        data_to_send={
             "oraclename": oracle.name,
             "Ri": point_to_bytes(oracle.Ri[key]).hex(),
             "zi": str(oracle.zi[key]),
@@ -332,8 +380,16 @@ def data_trace():
             "signature_i":signature_i,
             "public_key":base64.b64encode(oracle.get_rsa_pk_pem()).decode('utf-8')
         }
+        response = requests.post(
+        f"{oracle.proxy_url}/data_trace",json=data_to_send)
         
-    )
+        json_str = json.dumps(data_to_send)
+    # 计算JSON字符串的字节长度
+        byte_length = len(json_str.encode('utf-8'))
+        # 将字节数转换为KB
+        kb_size = byte_length / 1024
+        print(f"Oracle Data Trace Communication size(output): {kb_size:.2f} KB")
+        
         return jsonify({"status":"Watermarked"}),200
 
     return jsonify({"status":"Not Watermarked"}),200
@@ -354,7 +410,6 @@ if __name__=="__main__":
     proxy_url=config.PROXY_SETTINGS["proxy_url"]
     ENCLAVE_KEY_PATH=config.ENCLAVE_SETTINGS["publicKey"]
 
-
     IMAGE_WIDTH=224
     IMAGE_HEIGHT=224
     IMAGE_CHANNEL=3
@@ -365,6 +420,8 @@ if __name__=="__main__":
 
 
     oracle = Oracle(name,t,combiner_url,proxy_url,in_committee,lsh)
+
+    os.makedirs(f"./LocalStorage/oracle_storage/{oracle.name}/", exist_ok=True)
     if oracle.is_in_committee:
         oracle.register_committee()
         oracle.add_enclave_pk(ENCLAVE_KEY_PATH)
@@ -375,7 +432,7 @@ if __name__=="__main__":
 
     #Setup Finished
 
-    app.run(port=oracle_port, debug=False)
+    app.run(port=oracle_port, debug=False,threaded=True)
     #不要开调试，否则启动一个oracle后，另一个oracle启动时会重启一次，导致数据不一致问题（因为当前在一个目录下运行的）
 
 
