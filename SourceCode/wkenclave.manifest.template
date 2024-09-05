@@ -1,0 +1,63 @@
+# Watermark
+
+loader.entrypoint = "file:{{ gramine.libos }}"
+libos.entrypoint = "{{ entrypoint }}"
+loader.log_level = "{{ log_level }}"
+
+loader.insecure__use_cmdline_argv = true
+
+loader.env.LD_LIBRARY_PATH = "/lib:/usr/lib:{{ arch_libdir }}:/usr/{{ arch_libdir }}:{{ env.PWD }}"
+#{{ env.PWD }}即当前目录
+loader.env.HOME = "{{ env.HOME }}"
+
+
+fs.mounts = [
+  { path = "{{ entrypoint }}", uri = "file:{{ entrypoint }}" },
+  { path = "/lib", uri = "file:{{ gramine.runtimedir() }}" },
+  { path = "/usr/lib", uri = "file:/usr/lib" },
+  { path = "{{ arch_libdir }}", uri = "file:{{ arch_libdir }}" },
+  { path = "/usr/{{ arch_libdir }}", uri = "file:/usr/{{ arch_libdir }}" },
+{% for path in python.get_sys_path(entrypoint) %}
+  { path = "{{ path }}", uri = "file:{{ path }}" },
+{% endfor %}
+  { type = "tmpfs", path = "/tmp" },
+  { path = "/wklib", uri = "file:{{ env.PWD }}/lib" },
+  { path = "/LocalStorage/enclave_storage/input", uri="file:{{env.PWD}}/LocalStorage/enclave_storage/input"},
+  { path = "/LocalStorage/enclave_storage/output", uri="file:{{env.PWD}}/LocalStorage/enclave_storage/output"},
+  { path = "/contracts", uri="file:{{env.PWD}}/contracts"},
+  { path = "/PseudEnclave.py", uri = "file:{{env.PWD}}/PseudEnclave.py" },
+  { path = "/config.py", uri = "file:{{env.PWD}}/config.py" },
+  { path = "/wkutils", uri = "file:{{env.PWD}}/wkutils" },
+  { path = "/wk_evm", uri = "file:{{env.PWD}}/wk_evm" },
+  { path = "/keys", uri = "file:{{env.PWD}}/keys" },
+]
+
+sgx.debug = false
+#sgx.edmm_enable = true
+sgx.edmm_enable = {{ 'true' if env.get('EDMM', '0') == '1' else 'false' }}
+sgx.enclave_size = "8G"  # 或更大，取决于需求
+sgx.max_threads = 64
+
+
+sgx.trusted_files = [
+  "file:{{ entrypoint }}",
+  "file:{{ gramine.libos }}",
+  "file:{{ gramine.runtimedir() }}/",
+  "file:/usr/lib/",
+  "file:{{ arch_libdir }}/",
+  "file:/usr/{{ arch_libdir }}/",
+{% for path in python.get_sys_path(entrypoint) %}
+  "file:{{ path }}{{ '/' if path.is_dir() else '' }}",
+{% endfor %}
+  "file:{{env.PWD}}/PseudEnclave.py",
+  "file:{{env.PWD}}/config.py",
+  "file:{{env.PWD}}/wkutils/",
+  "file:{{env.PWD}}/wk_evm/",
+  "file:{{env.PWD}}/lib/",
+  "file:{{env.PWD}}/contracts/",
+  "file:{{env.PWD}}/keys/",
+]
+
+sgx.allowed_files = [
+  "file:{{ env.PWD }}/LocalStorage/enclave_storage/",
+]

@@ -1,0 +1,127 @@
+[loader]
+entrypoint = "file:/usr/lib/x86_64-linux-gnu/gramine/libsysdb.so"
+log_level = "error"
+insecure__use_cmdline_argv = true
+
+[loader.env]
+LD_LIBRARY_PATH = "/lib:/usr/lib:/lib/x86_64-linux-gnu:/usr//lib/x86_64-linux-gnu:/home/oracle"
+HOME = "/root"
+
+[libos]
+entrypoint = "/usr/bin/python3.9"
+
+[[fs.mounts]]
+path = "/usr/bin/python3.9"
+uri = "file:/usr/bin/python3.9"
+
+[[fs.mounts]]
+path = "/lib"
+uri = "file:/usr/lib/x86_64-linux-gnu/gramine/runtime/glibc"
+
+[[fs.mounts]]
+path = "/usr/lib"
+uri = "file:/usr/lib"
+
+[[fs.mounts]]
+path = "/lib/x86_64-linux-gnu"
+uri = "file:/lib/x86_64-linux-gnu"
+
+[[fs.mounts]]
+path = "/usr//lib/x86_64-linux-gnu"
+uri = "file:/usr//lib/x86_64-linux-gnu"
+
+[[fs.mounts]]
+path = "/usr/lib/python3.9"
+uri = "file:/usr/lib/python3.9"
+
+[[fs.mounts]]
+path = "/usr/lib/python3.9/lib-dynload"
+uri = "file:/usr/lib/python3.9/lib-dynload"
+
+[[fs.mounts]]
+path = "/usr/local/lib/python3.9/dist-packages"
+uri = "file:/usr/local/lib/python3.9/dist-packages"
+
+[[fs.mounts]]
+path = "/usr/lib/python3/dist-packages"
+uri = "file:/usr/lib/python3/dist-packages"
+
+[[fs.mounts]]
+type = "tmpfs"
+path = "/tmp"
+
+[[fs.mounts]]
+path = "/wklib"
+uri = "file:/home/oracle/lib"
+
+[[fs.mounts]]
+path = "/LocalStorage/enclave_storage/input"
+uri = "file:/home/oracle/LocalStorage/enclave_storage/input"
+
+[[fs.mounts]]
+path = "/LocalStorage/enclave_storage/output"
+uri = "file:/home/oracle/LocalStorage/enclave_storage/output"
+
+[[fs.mounts]]
+path = "/contracts"
+uri = "file:/home/oracle/contracts"
+
+[[fs.mounts]]
+path = "/PseudEnclave.py"
+uri = "file:/home/oracle/PseudEnclave.py"
+
+[[fs.mounts]]
+path = "/config.py"
+uri = "file:/home/oracle/config.py"
+
+[[fs.mounts]]
+path = "/wkutils"
+uri = "file:/home/oracle/wkutils"
+
+[[fs.mounts]]
+path = "/wk_evm"
+uri = "file:/home/oracle/wk_evm"
+
+[[fs.mounts]]
+path = "/keys"
+uri = "file:/home/oracle/keys"
+
+[sgx]
+debug = false
+edmm_enable = false
+enclave_size = "8G"
+max_threads = 64
+trusted_files = [
+    { uri = "file:/usr/bin/python3.9" },
+    { uri = "file:/usr/lib/x86_64-linux-gnu/gramine/libsysdb.so" },
+    { uri = "file:/usr/lib/x86_64-linux-gnu/gramine/runtime/glibc/" },
+    { uri = "file:/usr/lib/" },
+    { uri = "file:/lib/x86_64-linux-gnu/" },
+    { uri = "file:/usr//lib/x86_64-linux-gnu/" },
+    { uri = "file:/usr/lib/python3.9/" },
+    { uri = "file:/usr/lib/python3.9/lib-dynload/" },
+    { uri = "file:/usr/local/lib/python3.9/dist-packages/" },
+    { uri = "file:/usr/lib/python3/dist-packages/" },
+    { uri = "file:/home/oracle/PseudEnclave.py" },
+    { uri = "file:/home/oracle/config.py" },
+    { uri = "file:/home/oracle/wkutils/" },
+    { uri = "file:/home/oracle/wk_evm/" },
+    { uri = "file:/home/oracle/lib/" },
+    { uri = "file:/home/oracle/contracts/" },
+    { uri = "file:/home/oracle/keys/" },
+]
+allowed_files = [
+    "file:/home/oracle/LocalStorage/enclave_storage/",
+]
+isvprodid = 0
+isvsvn = 0
+remote_attestation = "none"
+enable_stats = false
+use_exinfo = false
+
+[sgx.cpu_features]
+avx = "unspecified"
+avx512 = "unspecified"
+amx = "unspecified"
+mpx = "disabled"
+pkru = "disabled"
