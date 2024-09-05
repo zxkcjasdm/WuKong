@@ -1,6 +1,6 @@
 **Source Code & Full Version Manuscript of WuKong**
 
-For the complete version of the manuscript, please refer to [Full Version of Manuscript](Full Version.pdf)
+For the complete version of the manuscript, please refer to [Full Version of Manuscript](Full%20Version.pdf)
 
 
 
