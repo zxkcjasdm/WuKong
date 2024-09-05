@@ -6,10 +6,10 @@ import asyncio
 import aiohttp
 import random
 
-async def send_request(session, url, message, public_key):
-    json_message = json.dumps(message)
-    ct = encrypt_message(public_key, json_message,0)
-    print(f"Sending to {url}: {ct}")
+async def send_request(session, url, ct):
+
+
+    print(f"Trace: Sending to {url}, Size:{len(ct.encode('utf-8'))/1024}KB")
     async with session.post(url, json={"ciphertext": ct}) as response:
         print(await response.text())
 
@@ -24,24 +24,27 @@ async def process_oracle(session, oracle_name,timestamp):
     test_host = config.ORACLE_SETTINGS['oracle_hosts'][oracle_name]
     test_port = config.ORACLE_SETTINGS['oracle_ports'][oracle_name]
     test_url = f"http://{test_host}:{test_port}"
-    
+
+    start_time = time.perf_counter()
     public_key = await get_public_key(session, test_url)
     #path="./data/wd/04.jpg" #使用嵌入过水印的图片
-    path="./LocalStorage/enclave_storage/output/c9517828e4979af987c442941bb7339f5287a3c02530c4250d98e0616c056abd.jpg"
+    path="./LocalStorage/user_storage/e91d31827170e69f1aa1e211ee8ca26556035b7b1ad4cfcb8373120fb28f11b3.jpg"
     data=image_to_base64(path)
+    
+    m = {'b': 2, 'data':data,'sigvc':"","a1a2":"com,pub","timestamp":timestamp,"metadata":"PhotoofHFUT","dp":"DEFAULT"} #m02  b==2表示trace 
+    
+    json_message = json.dumps(m)
+    ct = encrypt_message(public_key, json_message,0)
 
-    messages = [
-         {'b': 2, 'data':data,'sigvc':"","a1a2":"com,pub","timestamp":timestamp,"metadata":"PhotoofHFUT","dp":"DEFAULT"} #m02  b==2表示trace 
-         
-    ]
-
-    for m in messages:
-        await send_request(session, f"{test_url}/data_trace", m, public_key)
-        await asyncio.sleep(1)  # 1秒间隔
+    end_time = time.perf_counter()
+    execution_time = end_time - start_time
+    print(f"Provider computation executed in {execution_time:.4f} seconds")
+    await send_request(session, f"{test_url}/data_trace", ct)
+    await asyncio.sleep(1)  # 1秒间隔
 
 async def main():
 
-    test_oracles = ["oracle1", "oracle2"]
+    test_oracles = ["oracle0", "oracle1", "oracle2"]
     dp_name="dp0"
     timestamp=int(time.time())
     async with aiohttp.ClientSession() as session:
