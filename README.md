@@ -1,5 +1,11 @@
 **Source Code & Full Version Manuscript of WuKong**
 
+For the complete version of the manuscript, please refer to [Full Version of Manuscript](Full Version.pdf)
+
+
+
+
+
 **Configuration**
   1.  Install Gramine. It's recommended to use the Gramine Docker Image for ease of setup and compatibility. 
   
