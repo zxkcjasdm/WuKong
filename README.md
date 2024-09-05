@@ -1,6 +1,6 @@
 **Source Code & Full Version Manuscript of WuKong**
 
-1. **Configuration**
+**Configuration**
   1.  Install Gramine. It's recommended to use the Gramine Docker Image for ease of setup and compatibility. 
   
   2.  Use pip to install all the necessary Python packages by running: `pip install -r requirements.txt`
@@ -9,14 +9,16 @@
 
   4.  Install geth
 
-2. **Setup**
+
+**Setup**
   1. Compile the project with Software Guard Extensions (SGX) enabled by running: `make SGX=1`
   
   2. Open the config.py file and update the configuration parameters, such as host and port, to match the environment's requirements
 
   3. Generate the keypair of E by running: `python gen_enclave_keypair.py`
 
-3. **Running**
+
+**Running**
   1. `geth --dev --http --http.addr "0.0.0.0" --http.port "8545" --datadir .public_chain/data --http.corsdomain "*" --http.api "eth,web3,personal,net" console`
 
   2. `python combiner.py`
