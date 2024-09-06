@@ -58,7 +58,6 @@ def init_contract():
         with open("contracts/compiled_contract_new.json", "r") as f:
             compiled_sol = json.load(f)
 
-        #合约较大，如果不优化就会超出EIP-170的24,576字节限制
         contract_interface = compiled_sol['<stdin>:CPSC']
         
         custom_backend = PyEVMBackend(vm_configuration=[(0, WK_EVM)])
@@ -113,7 +112,6 @@ def init_contract():
             tx_hash = contract_instance.functions.register_committee(comname).transact()
             tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
         print("合约已经初始化了",contract_address)
-        #这里pk太长了，无法在合约存储
         app.pk_psc,app.ssk_psc=Setup(200,200,200)
         # tx_hash = contract_instance.functions.setvckeys(pk_psc,ssk_psc).transact({'gas': int(500000*8)})
         # tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
@@ -196,12 +194,7 @@ def preprocess():
                 m2={"data":m2list[0],"sigvc":m2list[2],"a1a2":m2list[3],"timestamp":m2list[4],"Rx":m2list[5],"Ry":m2list[6],"z":m2list[7]}
 
                 wd_path=f"{app.image_saving_path}/{m2['data'].decode('utf-8')}.jpg"#接收图像保存的位置
-                #提取水印
-                #print(wd_path)
-                inf="UBIPLAB"
                 inf=app.contract_instance.functions.callExt(wd_path.encode("utf-8"),app.wk).call()
-                if inf == "":
-                    inf = "UBIPLAB" #simulation
                 #使用pk_tar加密，这里用enclave的pk模拟
                 pk_tar=read_rsapk_from_pem(config.ENCLAVE_SETTINGS["publicKey"])
                 encrypt_message(pk_tar,inf.decode("utf-8"),0)
@@ -234,9 +227,6 @@ def preprocess():
                 m2={"data":u128data,"sigvc":m2list[2].decode('utf-8'),"a1a2":m2list[3],"timestamp":m2list[4],"Rx":m2list[5],"Ry":m2list[6],"z":m2list[7]}
             else:
                 m2={"data":m2list[0].decode('utf-8'),"sigvc":m2list[2].decode('utf-8'),"a1a2":m2list[3],"timestamp":m2list[4],"Rx":m2list[5],"Ry":m2list[6],"z":m2list[7]}
-            """
-            已经通过mapping存储过了
-            """
 
             recived_message = json.dumps(m2) #真实保存的数据，不能泄露
             h = sha3.keccak_256()
